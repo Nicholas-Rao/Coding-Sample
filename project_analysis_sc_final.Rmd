@@ -1,0 +1,1029 @@
+---
+#title: "bootstrap"
+#output: pdf_document
+#date: "2023-07-01"
+---
+
+# load in data
+```{r}
+load("/Users/TestAccount/Desktop/BDSI/Data_mining:Stats/data/pathway_scores.RData")
+load("/Users/TestAccount/Desktop/BDSI/Data_mining:Stats/data/pc_scores.rda")
+load("/Users/TestAccount/Desktop/BDSI/Data_mining:Stats/data/survival.RData")
+```
+
+# load libraries 
+```{r}
+library(ggplot2) 
+library(tidyverse) 
+library(magrittr)
+library(dplyr)
+library(stringr)
+library(grid)
+library(gridExtra)
+library(cowplot)
+library(MASS)
+library(corrplot)
+library(glmnet)
+library(pls)
+library(GGally)
+library(corrr)
+library(FactoMineR)
+library(ggcorrplot)
+library(factoextra)
+library(randomForest)
+library(mgcv)
+library(Boruta)
+library(caret)
+library(arm)
+library(car)
+library(broom)
+library(kableExtra)
+
+library(foreach)
+library(doParallel)
+```
+
+
+# datasets 
+```{r}
+pc_scores <- pc_scores %>% data.frame()
+pathway.scores <- pathway.scores %>% data.frame()
+
+pc_scores.scaled <- scale(pc_scores)
+pathway.scores.scaled <- scale(pathway.scores)
+y.scaled <- scale(Y)
+
+b <- boxcox(lm(Y ~ 1))
+# Exact lambda
+lambda <- b$x[which.max(b$y)]
+y_norm=(Y ^ lambda - 1) / lambda
+y.transformed <- y_norm
+y.transformed.scaled <- scale(y.transformed)
+B <- 1000
+```
+
+```{r}
+# 0901
+set.seed(123)
+sample0901 <- sample(c(TRUE, FALSE), 61, replace=TRUE, prob=c(0.9,0.1)) 
+y.train.scaled0901  <- y.transformed.scaled[sample0901, ]
+y.test.scaled0901   <- y.transformed.scaled[!sample0901, ]
+y.train0901  <- y.transformed[sample0901]
+y.test0901   <- y.transformed[!sample0901]
+pc.train.scaled0901 <- pc_scores.scaled[sample0901, ]
+pc.test.scaled0901 <- pc_scores.scaled[!sample0901, ]
+pc.train0901 <- pc_scores[sample0901, ]
+pc.test0901 <- pc_scores[!sample0901, ]
+path.train.scaled0901 <- pathway.scores.scaled[sample0901, ]
+path.test.scaled0901 <- pathway.scores.scaled[!sample0901, ]
+path.train0901 <- pathway.scores[sample0901, ]
+path.test0901 <- pathway.scores[!sample0901, ]
+
+
+# 0802
+set.seed(123)
+sample0802 <- sample(c(TRUE, FALSE), 61, replace=TRUE, prob=c(0.8,0.2)) 
+y.train.scaled0802  <- y.transformed.scaled[sample0802, ]
+y.test.scaled0802   <- y.transformed.scaled[!sample0802, ]
+y.train0802  <- y.transformed[sample0802]
+y.test0802   <- y.transformed[!sample0802]
+pc.train.scaled0802 <- pc_scores.scaled[sample0802, ]
+pc.test.scaled0802 <- pc_scores.scaled[!sample0802, ]
+pc.train0802 <- pc_scores[sample0802, ]
+pc.test0802 <- pc_scores[!sample0802, ]
+path.train.scaled0802 <- pathway.scores.scaled[sample0802, ]
+path.test.scaled0802 <- pathway.scores.scaled[!sample0802, ]
+path.train0802 <- pathway.scores[sample0802, ]
+path.test0802 <- pathway.scores[!sample0802, ]
+
+
+# 0703
+set.seed(123)
+sample0703 <- sample(c(TRUE, FALSE), 61, replace=TRUE, prob=c(0.7,0.3)) 
+y.train.scaled0703  <- y.transformed.scaled[sample0703, ]
+y.test.scaled0703   <- y.transformed.scaled[!sample0703, ]
+y.train0703  <- y.transformed[sample0703]
+y.test0703   <- y.transformed[!sample0703]
+pc.train.scaled0703 <- pc_scores.scaled[sample0703, ]
+pc.test.scaled0703 <- pc_scores.scaled[!sample0703, ]
+pc.train0703 <- pc_scores[sample0703, ]
+pc.test0703 <- pc_scores[!sample0703, ]
+path.train.scaled0703 <- pathway.scores.scaled[sample0703, ]
+path.test.scaled0703 <- pathway.scores.scaled[!sample0703, ]
+path.train0703 <- pathway.scores[sample0703, ]
+path.test0703 <- pathway.scores[!sample0703, ]
+
+
+
+# 0604
+set.seed(123)
+sample0604 <- sample(c(TRUE, FALSE), 61, replace=TRUE, prob=c(0.6,0.4)) 
+y.train.scaled0604  <- y.transformed.scaled[sample0604, ]
+y.test.scaled0604   <- y.transformed.scaled[!sample0604, ]
+y.train0604  <- y.transformed[sample0604]
+y.test0604   <- y.transformed[!sample0604]
+pc.train.scaled0604 <- pc_scores.scaled[sample0604, ]
+pc.test.scaled0604 <- pc_scores.scaled[!sample0604, ]
+pc.train0604 <- pc_scores[sample0604, ]
+pc.test0604 <- pc_scores[!sample0604, ]
+path.train.scaled0604 <- pathway.scores.scaled[sample0604, ]
+path.test.scaled0604 <- pathway.scores.scaled[!sample0604, ]
+path.train0604 <- pathway.scores[sample0604, ]
+path.test0604 <- pathway.scores[!sample0604, ]
+
+# 0505
+set.seed(123)
+sample0505 <- sample(c(TRUE, FALSE), 61, replace=TRUE, prob=c(0.5,0.5)) 
+y.train.scaled0505  <- y.transformed.scaled[sample0505, ]
+y.test.scaled0505   <- y.transformed.scaled[!sample0505, ]
+y.train0505  <- y.transformed[sample0505]
+y.test0505   <- y.transformed[!sample0505]
+pc.train.scaled0505 <- pc_scores.scaled[sample0505, ]
+pc.test.scaled0505 <- pc_scores.scaled[!sample0505, ]
+pc.train0505 <- pc_scores[sample0505, ]
+pc.test0505 <- pc_scores[!sample0505, ]
+path.train.scaled0505 <- pathway.scores.scaled[sample0505, ]
+path.test.scaled0505 <- pathway.scores.scaled[!sample0505, ]
+path.train0505 <- pathway.scores[sample0505, ]
+path.test0505 <- pathway.scores[!sample0505, ]
+```
+
+# Forward selection and paste functions
+```{r}
+# forward selection manually 
+# tested on pc_scores[, 1:30], matches step function output for set of predictors with lowest AIC
+
+forward.fun <- function(Y, dat, prune){
+  
+  ncols <- as.integer(ncol(dat))
+  nrows <- as.integer(nrow(dat))
+  minAIC_coef_names <- vector(mode = "list", length = ncols)
+  forward_coefs <- c()
+  
+  if(prune=="prune") {
+    num_vars <- floor(nrows/10)
+  } else { 
+    num_vars <- nrows
+    }
+  
+  for(i in 1:num_vars){ 
+    AIC.vec <- rep(0, ncols)
+    forward_coef.list <- vector(mode = "list", length = ncols)
+  
+    for(j in 1:ncols){
+      col_names <- dat %>% 
+        dplyr::select(j) %>% 
+        colnames() 
+      main <- unique(c(forward_coefs, col_names))
+      formula <- as.formula(paste0("Y~", paste0(main, collapse='+')))
+      
+      mod_dat <- cbind(Y=Y, dat)
+      mod <- lm(formula, data=mod_dat)
+      mod_coef <- names(mod$coefficients[-1])
+      if(length(mod_coef) < i){
+        AIC.vec[j] <- -Inf 
+        forward_coef.list[[j]] <- mod_coef
+      } else{
+        AIC.vec[j] <- extractAIC(mod)[2]
+        forward_coef.list[[j]] <- mod_coef
+      }
+    }
+    AIC.vec[!is.finite(AIC.vec)] <- NA
+    if(all(is.na(AIC.vec))){
+      break
+    } else{ 
+      minAIC_ind <- which.min(AIC.vec)
+      minAIC_forward <- AIC.vec[minAIC_ind]
+      minAIC_coefs <- forward_coef.list[[minAIC_ind]]
+      
+      minAIC_coef_names[[i]] <- list(min_AIC = minAIC_forward, coef_names = minAIC_coefs)
+      forward_coefs <- minAIC_coefs 
+     }
+  }
+  return_list <- list(coef_names = minAIC_coef_names, forward_coefs = forward_coefs )
+  return(return_list)
+}
+
+
+paste.fun <- function(x) {                
+      paste0(x, collapse=' + ')
+    }
+```
+
+
+
+# load bootstraped joined dataframes and order 
+```{r}
+highly_selected_full.joined.dat <- read.csv("full_nselected_bootstrap1.joined.csv")
+highly_selected_0901.joined.dat <- read.csv("0901_nselected_bootstrap1.joined.csv")
+highly_selected_0802.joined.dat <- read.csv("0802_nselected_bootstrap1.joined.csv")
+highly_selected_0703.joined.dat <- read.csv("0703_nselected_bootstrap1.joined.csv")
+highly_selected_0604.joined.dat <- read.csv("0604_nselected_bootstrap1.joined.csv")
+highly_selected_0505.joined.dat <- read.csv("0505_nselected_bootstrap1.joined.csv")
+
+pc_scores.scaled.order.full <- pc_scores.scaled[, sort(highly_selected_full.joined.dat$pc)]
+pc_scores.scaled.order.0901 <- pc.train.scaled0901[, sort(highly_selected_0901.joined.dat$pc)]
+pc_scores.scaled.order.0802 <- pc.train.scaled0802[, sort(highly_selected_0802.joined.dat$pc)]
+pc_scores.scaled.order.0703 <- pc.train.scaled0703[, sort(highly_selected_0703.joined.dat$pc)]
+pc_scores.scaled.order.0604 <- pc.train.scaled0604[, sort(highly_selected_0604.joined.dat$pc)]
+pc_scores.scaled.order.0505 <- pc.train.scaled0505[, sort(highly_selected_0505.joined.dat$pc)]
+```
+
+
+
+# Step 2 
+## Full data 
+```{r}
+lasso_alg.full <- c()
+lambda_constant.full <- sqrt(2*log(ncol(pathway.scores))/length(y.transformed.scaled))
+pc_lambdas=c()
+pc_scores.scaled.order.full <- pc_scores.scaled[, sort(colnames(pc_scores.scaled))]
+pathway_names.full=data.frame(colnames(pathway.scores.scaled))
+pathway_names.full$scores = rep(0,times=nrow(pathway_names.full))
+colnames(pathway_names.full)[1] = "pathways"
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.full=lambda_constant.full*(1-highly_selected_full.joined.dat[i,3])
+  best_mod_alg.full=glmnet(as.matrix(pathway.scores.scaled),pc_scores.scaled.order.full[,i],alpha=1,lambda=best_lambda_alg.full)
+  nonzero_coef_alg.full <- rownames(coef(best_mod_alg.full, s=best_lambda_alg.full))[coef(best_mod_alg.full, s=best_lambda_alg.full)[,1]!= 0]
+  lasso_alg.full<-c(lasso_alg.full,nonzero_coef_alg.full)
+  unique_boot.full=unique(nonzero_coef_alg.full)
+  for (j in 1:nrow(pathway_names.full)){
+    if (pathway_names.full[j,1] %in% unique_boot.full){
+      pathway_names.full[j,2] = pathway_names.full[j,2]+highly_selected_full.joined.dat[i,3]
+    }
+  }
+}
+lasso_alg.sig.full <- pathway_names.full %>% filter(scores>0) %>% pull(pathways)
+
+```
+
+## 90/10
+```{r}
+lasso_alg.0901 <- c()
+lambda_constant.0901 <- sqrt(2*log(ncol(path.train0901))/length(y.train.scaled0901))
+pc_lambdas=c()
+pc_scores.scaled.order.0901 <- pc.train.scaled0901[, sort(colnames(pc.train.scaled0901))]
+pathway_names.0901=data.frame(colnames(path.train.scaled0901))
+pathway_names.0901$scores = rep(0,times=nrow(pathway_names.0901))
+pathway_names.0901$num.selected=rep(0,times=nrow(pathway_names.0901))
+colnames(pathway_names.0901)[1] = "pathways"
+genes_selected0901 = c()
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.0901=lambda_constant.0901*(1-highly_selected_0901.joined.dat[i,3])
+  best_mod_alg.0901=glmnet(as.matrix(path.train.scaled0901),pc_scores.scaled.order.0901[,i],alpha=1,lambda=best_lambda_alg.0901)
+  nonzero_coef_alg.0901 <- rownames(coef(best_mod_alg.0901, s=best_lambda_alg.0901))[coef(best_mod_alg.0901, s=best_lambda_alg.0901)[,1]!= 0]
+  lasso_alg.0901<-c(lasso_alg.0901,nonzero_coef_alg.0901)
+  unique_boot.0901=unique(nonzero_coef_alg.0901)
+  genes_selected0901=c(genes_selected0901,length(unique_boot.0901))
+  for (j in 1:nrow(pathway_names.0901)){
+    if (pathway_names.0901[j,1] %in% unique_boot.0901){
+      pathway_names.0901[j,2] = pathway_names.0901[j,2]+highly_selected_0901.joined.dat[i,3]
+      pathway_names.0901[j,3] = pathway_names.0901[j,3]+1
+    }
+  }
+}
+lasso_alg.sig.0901 <- pathway_names.0901 %>% filter(scores>0) %>% pull(pathways)
+step1.step2.0901 = cbind(Proportion = highly_selected_0901.joined.dat$prop_selected,Genes = genes_selected0901)
+img_prop.0901 = cbind(highly_selected_0901.joined.dat$pc,step1.step2.0901)
+img_prop.0901=data.frame(img_prop.0901)
+img_prop.0901=img_prop.0901 %>% dplyr::arrange(Proportion)
+View(img_prop.0901)
+step1.step2.0901=data.frame(step1.step2.0901)
+step1.step2.0901.graph = ggplot(data=step1.step2.0901,mapping=aes(x=Proportion,y=Genes))+geom_point() + xlab("Step 1b Proportion") + ylab("Step 1c Number of Genes") + geom_smooth(se=F)+ggtitle("90/10 Split")+theme(text = element_text(size = 16, family = "serif"))
+step1.step2.0901.graph
+num.genes.0901 = pathway_names.0901 %>%
+  dplyr::arrange(desc(num.selected)) %>%
+  dplyr::select(pathways,num.selected)
+View(pathway_names.0802)
+```
+
+## 80/20
+```{r}
+lasso_alg.0802 <- c()
+lambda_constant.0802 <- sqrt(2*log(ncol(path.train0802))/length(y.train.scaled0802))
+pc_lambdas=c()
+pc_scores.scaled.order.0802 <- pc.train.scaled0802[, sort(colnames(pc.train.scaled0802))]
+pathway_names.0802=data.frame(colnames(path.train.scaled0802))
+pathway_names.0802$scores = rep(0,times=nrow(pathway_names.0802))
+pathway_names.0802$num.selected=rep(0,times=nrow(pathway_names.0802))
+colnames(pathway_names.0802)[1] = "pathways"
+genes_selected0802 = c()
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.0802=lambda_constant.0802*(1-highly_selected_0802.joined.dat[i,3])
+  best_mod_alg.0802=glmnet(as.matrix(path.train.scaled0802),pc_scores.scaled.order.0802[,i],alpha=1,lambda=best_lambda_alg.0802)
+  nonzero_coef_alg.0802 <- rownames(coef(best_mod_alg.0802, s=best_lambda_alg.0802))[coef(best_mod_alg.0802, s=best_lambda_alg.0802)[,1]!= 0]
+  lasso_alg.0802<-c(lasso_alg.0802,nonzero_coef_alg.0802)
+  unique_boot.0802=unique(nonzero_coef_alg.0802)
+  genes_selected0802=c(genes_selected0802,length(unique_boot.0802))
+  for (j in 1:nrow(pathway_names.0802)){
+    if (pathway_names.0802[j,1] %in% unique_boot.0802){
+      pathway_names.0802[j,2] = pathway_names.0802[j,2]+highly_selected_0802.joined.dat[i,3]
+      pathway_names.0802[j,3] = pathway_names.0802[j,3]+1
+    }
+  }
+}
+lasso_alg.sig.0802 <- pathway_names.0802 %>% filter(scores>0) %>% pull(pathways)
+View(pathway_names.0802)
+step1.step2.0802 = cbind(Proportion = highly_selected_0802.joined.dat$prop_selected,Genes = genes_selected0802)
+step1.step2.0802=data.frame(step1.step2.0802)
+step1.step2.0802.graph = ggplot(data=step1.step2.0802,mapping=aes(x=Proportion,y=Genes))+geom_point() + xlab("Step 1b Proportion") + ylab("Step 1c Number of Genes") + geom_smooth(se=F)+ggtitle("80/20 Split")+theme(text = element_text(size = 16, family = "serif"))
+step1.step2.0802.graph
+num.genes.0802 = pathway_names.0802 %>%
+  dplyr::arrange(desc(num.selected)) %>%
+  dplyr::select(pathways,num.selected)
+View(num.genes.0802)
+```
+
+## 70/30
+```{r}
+lasso_alg.0703 <- c()
+lambda_constant.0703 <- sqrt(2*log(ncol(path.train0703))/length(y.train.scaled0703))
+pc_lambdas=c()
+pc_scores.scaled.order.0703 <- pc.train.scaled0703[, sort(colnames(pc.train.scaled0703))]
+pathway_names.0703=data.frame(colnames(path.train.scaled0703))
+pathway_names.0703$scores = rep(0,times=nrow(pathway_names.0703))
+pathway_names.0703$num.selected=rep(0,times=nrow(pathway_names.0703))
+colnames(pathway_names.0703)[1] = "pathways"
+genes_selected0703 = c()
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.0703=lambda_constant.0703*(1-highly_selected_0703.joined.dat[i,3])
+  best_mod_alg.0703=glmnet(as.matrix(path.train.scaled0703),pc_scores.scaled.order.0703[,i],alpha=1,lambda=best_lambda_alg.0703)
+  nonzero_coef_alg.0703 <- rownames(coef(best_mod_alg.0703, s=best_lambda_alg.0703))[coef(best_mod_alg.0703, s=best_lambda_alg.0703)[,1]!= 0]
+  lasso_alg.0703<-c(lasso_alg.0703,nonzero_coef_alg.0703)
+  unique_boot.0703=unique(nonzero_coef_alg.0703)
+  genes_selected0703=c(genes_selected0703,length(unique_boot.0703))
+  for (j in 1:nrow(pathway_names.0703)){
+    if (pathway_names.0703[j,1] %in% unique_boot.0703){
+      pathway_names.0703[j,2] = pathway_names.0703[j,2]+highly_selected_0703.joined.dat[i,3]
+      pathway_names.0703[j,3] = pathway_names.0703[j,3]+1
+    }
+  }
+}
+lasso_alg.sig.0703 <- pathway_names.0703 %>% filter(scores>0) %>% pull(pathways)
+step1.step2.0703 = cbind(Feature=highly_selected_0703.joined.dat$pc, Proportion = highly_selected_0703.joined.dat$prop_selected,Genes = genes_selected0703)
+step1.step2.0703=data.frame(step1.step2.0703)
+step1.step2.0703.graph = ggplot(data=step1.step2.0703,mapping=aes(x=Proportion,y=Genes))+geom_point() + xlab("Step 1b Proportion") + ylab("Step 1c Number of Genes") + geom_smooth(se=F)+ggtitle("70/30 Split")+theme(text = element_text(size = 16, family = "serif"))
+step1.step2.0703.graph
+num.genes.0703 = pathway_names.0703 %>%
+  dplyr::arrange(desc(num.selected)) %>%
+  dplyr::select(pathways,num.selected)
+View(num.genes.0703)
+```
+
+## 60/40
+```{r}
+lasso_alg.0604 <- c()
+lambda_constant.0604 <- sqrt(2*log(ncol(path.train0604))/length(y.train.scaled0604))
+pc_lambdas=c()
+pc_scores.scaled.order.0604 <- pc.train.scaled0604[, sort(colnames(pc.train.scaled0604))]
+pathway_names.0604=data.frame(colnames(path.train.scaled0604))
+pathway_names.0604$scores = rep(0,times=nrow(pathway_names.0604))
+pathway_names.0604$num.selected=rep(0,times=nrow(pathway_names.0604))
+colnames(pathway_names.0604)[1] = "pathways"
+genes_selected0604 = c()
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.0604=lambda_constant.0604*(1-highly_selected_0604.joined.dat[i,3])
+  best_mod_alg.0604=glmnet(as.matrix(path.train.scaled0604),pc_scores.scaled.order.0604[,i],alpha=1,lambda=best_lambda_alg.0604)
+  nonzero_coef_alg.0604 <- rownames(coef(best_mod_alg.0604, s=best_lambda_alg.0604))[coef(best_mod_alg.0604, s=best_lambda_alg.0604)[,1]!= 0]
+  lasso_alg.0604<-c(lasso_alg.0604,nonzero_coef_alg.0604)
+  unique_boot.0604=unique(nonzero_coef_alg.0604)
+  genes_selected0604=c(genes_selected0604,length(unique_boot.0604))
+  for (j in 1:nrow(pathway_names.0604)){
+    if (pathway_names.0604[j,1] %in% unique_boot.0604){
+      pathway_names.0604[j,2] = pathway_names.0604[j,2]+highly_selected_0604.joined.dat[i,3]
+      pathway_names.0604[j,3] = pathway_names.0604[j,3]+1
+    }
+  }
+}
+lasso_alg.sig.0604 <- pathway_names.0604 %>% filter(scores>0) %>% pull(pathways)
+step1.step2.0604 = cbind(Proportion = highly_selected_0604.joined.dat$prop_selected,Genes = genes_selected0604)
+step1.step2.0604=data.frame(step1.step2.0604)
+step1.step2.0604.graph = ggplot(data=step1.step2.0604,mapping=aes(x=Proportion,y=Genes))+geom_point() + xlab("Step 1b Proportion") + ylab("Step 1c Number of Genes") + geom_smooth(se=F)+ggtitle("60/40 Split")+theme(text = element_text(size = 16, family = "serif"))
+step1.step2.0604.graph
+num.genes.0604 = pathway_names.0604 %>%
+  dplyr::arrange(desc(num.selected)) %>%
+  dplyr::select(pathways,num.selected)
+```
+
+## 50/50
+```{r}
+lasso_alg.0505 <- c()
+lambda_constant.0505 <- sqrt(2*log(ncol(path.train0505))/length(y.train.scaled0505))
+pc_lambdas=c()
+pc_scores.scaled.order.0505 <- pc.train.scaled0505[, sort(colnames(pc.train.scaled0505))]
+pathway_names.0505=data.frame(colnames(path.train.scaled0505))
+pathway_names.0505$scores = rep(0,times=nrow(pathway_names.0505))
+pathway_names.0505$num.selected=rep(0,times=nrow(pathway_names.0505))
+colnames(pathway_names.0505)[1] = "pathways"
+genes_selected0505 = c()
+for (i in 1:143){
+  set.seed(123)
+  best_lambda_alg.0505=lambda_constant.0505*(1-highly_selected_0505.joined.dat[i,3])
+  best_mod_alg.0505=glmnet(as.matrix(path.train.scaled0505),pc_scores.scaled.order.0505[,i],alpha=1,lambda=best_lambda_alg.0505)
+  nonzero_coef_alg.0505 <- rownames(coef(best_mod_alg.0505, s=best_lambda_alg.0505))[coef(best_mod_alg.0505, s=best_lambda_alg.0505)[,1]!= 0]
+  lasso_alg.0505<-c(lasso_alg.0505,nonzero_coef_alg.0505)
+  unique_boot.0505=unique(nonzero_coef_alg.0505)
+  genes_selected0505=c(genes_selected0505,length(unique_boot.0505))
+  for (j in 1:nrow(pathway_names.0505)){
+    if (pathway_names.0505[j,1] %in% unique_boot.0505){
+      pathway_names.0505[j,2] = pathway_names.0505[j,2]+highly_selected_0505.joined.dat[i,3]
+      pathway_names.0505[j,3] = pathway_names.0505[j,3]+1
+    }
+  }
+}
+lasso_alg.sig.0505 <- pathway_names.0505 %>% filter(scores>0) %>% pull(pathways)
+View(data.frame(lasso_alg.sig.0505))
+step1.step2.0505 = cbind(Proportion = highly_selected_0505.joined.dat$prop_selected,Genes = genes_selected0505)
+step1.step2.0505=data.frame(step1.step2.0505)
+step1.step2.0505.graph = ggplot(data=step1.step2.0505,mapping=aes(x=Proportion,y=Genes))+geom_point() + xlab("Step 1b Proportion") + ylab("Step 1c Number of Genes") + geom_smooth(se=F)+ggtitle("50/50 Split")+theme(text = element_text(size = 16, family = "serif"))
+step1.step2.0505.graph
+num.genes.0505 = pathway_names.0505 %>%
+  dplyr::arrange(desc(num.selected)) %>%
+  dplyr::select(pathways,num.selected)
+step2viz.0901=pathway_names.0901 %>% dplyr::filter(num.selected>1) %>% nrow()
+step2viz.0802=pathway_names.0802 %>% dplyr::filter(num.selected>1) %>% nrow()
+step2viz.0703=pathway_names.0703 %>% dplyr::filter(num.selected>1) %>% nrow()
+step2viz.0604=pathway_names.0604 %>% dplyr::filter(num.selected>1) %>% nrow()
+step2viz.0505=pathway_names.0505 %>% dplyr::filter(num.selected>1) %>% nrow()
+Split = c("90/10","80/20","70/30","60/40","50/50")
+Split_step2=c(step2viz.0901,step2viz.0802,step2viz.0703,step2viz.0604,step2viz.0505)
+step2vizdat=cbind(Split,Number=Split_step2)
+step2vizdat=data.frame(step2vizdat)
+step2viz=ggplot(data=step2vizdat,mapping=aes(x=Split,y=Number))+geom_bar(stat='identity')
+step2viz
+```
+
+
+
+
+# Step 2.5: LASSO with Y on selected genes 
+## Full data
+```{r}
+rep_proportions = seq(from=0,to=1,by=.05)
+for(i in rep_proportions){
+  pathway_names_sig.full = pathway_names.full %>% filter(scores>i)
+  lasso_boot_sig.full=pathway_names_sig.full[,1]
+  
+  step2.5.mod.dat.full <- pathway.scores.scaled %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.full)) 
+  
+  cv_alg2.5.full <- cv.glmnet(as.matrix(step2.5.mod.dat.full), y.transformed.scaled, alpha = 1)
+  best_lambda_alg2.5.full <- cv_alg2.5.full$lambda.min
+  best_mod_alg2.5.full <- glmnet(as.matrix(step2.5.mod.dat.full), y.transformed.scaled, alpha = 1, lambda = best_lambda_alg2.5.full, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.full <- rownames(coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full))[coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full)[,1]!= 0] 
+  lasso_alg.sig2.5.full <- unique(nonzero_coef_alg2.5.full)
+  
+  while(length(lasso_alg.sig2.5.full)==1){
+    best_lambda_alg2.5.full <- best_lambda_alg2.5.full*.95
+    best_mod_alg2.5.full <- glmnet(as.matrix(step2.5.mod.dat.full), y.transformed.scaled, 
+                                 alpha = 1, lambda = best_lambda_alg2.5.full, path=TRUE)
+    nonzero_coef_alg2.5.full <- rownames(coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full))[coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full)[,1]!= 0] 
+    lasso_alg.sig2.5.full <- unique(nonzero_coef_alg2.5.full)
+  }
+  
+  if((length(lasso_alg.sig2.5.full)-1)<sqrt(length(y.transformed.scaled))){
+    break
+  }
+}
+# step2.5.mod.dat.full <- pathway.scores.scaled %>% 
+#   data.frame() %>% 
+#   dplyr::select(any_of(lasso_alg.sig.full)) 
+# 
+# set.seed(123)
+# cv_alg2.5.full <- cv.glmnet(as.matrix(step2.5.mod.dat.full), y.transformed.scaled, alpha = 1)
+# best_lambda_alg2.5.full <- cv_alg2.5.full$lambda.min
+# best_mod_alg2.5.full <- glmnet(as.matrix(step2.5.mod.dat.full), y.transformed.scaled, alpha = 1, 
+#                           lambda = best_lambda_alg2.5.full, path=TRUE)
+# # extract nonzero coefs
+# nonzero_coef_alg2.5.full <- rownames(coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full))[coef(best_mod_alg2.5.full, s=best_lambda_alg2.5.full)[,1]!= 0]
+# 
+# lasso_alg.sig2.5.full <- unique(nonzero_coef_alg2.5.full)
+```
+
+## 90/10
+```{r}
+rep_proportions = seq(from=0,to=max(pathway_names.0901$scores),by=.05)
+step3ind0901=0
+step3loop0901=c()
+step3indvec0901=c()
+step3numgenes0901=c()
+for(i in rep_proportions){
+  prop9=i
+  set.seed(123)
+  pathway_names_sig.0901 = pathway_names.0901 %>% filter(scores>prop9)
+  while(nrow(pathway_names_sig.0901)<2){
+     prop9=prop9-.005
+     pathway_names_sig.0901 = pathway_names.0901 %>% filter(scores>prop9)
+  }
+  lasso_boot_sig.0901=pathway_names_sig.0901[,1]
+  step2.5.mod.dat.0901 <- path.train.scaled0901 %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.0901)) 
+  cv_alg2.5.0901 <- cv.glmnet(as.matrix(step2.5.mod.dat.0901), y.train.scaled0901, alpha = 1)
+  best_lambda_alg2.5.0901 <- cv_alg2.5.0901$lambda.min
+  best_mod_alg2.5.0901 <- glmnet(as.matrix(step2.5.mod.dat.0901), y.train.scaled0901, alpha = 1, lambda = best_lambda_alg2.5.0901, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0901 <- rownames(coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901))[coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901)[,1]!= 0] 
+  lasso_alg.sig2.5.0901 <- unique(nonzero_coef_alg2.5.0901)
+  while(length(lasso_alg.sig2.5.0901)-1>=sqrt(length(y.test.scaled0901))){
+    best_lambda_alg2.5.0901=best_lambda_alg2.5.0901*1.025
+  best_mod_alg2.5.0901 <- glmnet(as.matrix(step2.5.mod.dat.0901), y.train.scaled0901, alpha = 1, lambda = best_lambda_alg2.5.0901, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0901 <- rownames(coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901))[coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901)[,1]!= 0] 
+  lasso_alg.sig2.5.0901 <- unique(nonzero_coef_alg2.5.0901)
+  step3ind0901=step3ind0901+1
+  step3indvec0901=c(step3indvec0901,step3ind0901)
+  step3numgenes0901=c(step3numgenes0901,length(lasso_alg.sig2.5.0901))
+  if(length(lasso_alg.sig2.5.0901)-1>=sqrt(length(y.test.scaled0901))){
+  step3loop0901=c(step3loop0901,NA)
+  }else{
+  step3loop0901=c(step3loop0901,length(lasso_alg.sig2.5.0901))
+  }
+  }
+  View(data.frame(step3loop0901))
+  # while(length(lasso_alg.sig2.5.0901)==1){
+  #   best_lambda_alg2.5.0901 <- best_lambda_alg2.5.0901*.95
+  #   best_mod_alg2.5.0901 <- glmnet(as.matrix(step2.5.mod.dat.0901), y.train.scaled0901, 
+  #                                alpha = 1, lambda = best_lambda_alg2.5.0901, path=TRUE)
+  #   nonzero_coef_alg2.5.0901 <- rownames(coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901))[coef(best_mod_alg2.5.0901, s=best_lambda_alg2.5.0901)[,1]!= 0] 
+  #   lasso_alg.sig2.5.0901 <- unique(nonzero_coef_alg2.5.0901)
+  # }
+  
+  if((length(lasso_alg.sig2.5.0901)>2)&&(length(lasso_alg.sig2.5.0901)-1)<sqrt(length(y.test.scaled0901))){
+    break
+  }
+}
+step3viz0901=cbind(Iteration=step3indvec0901,Genes=step3numgenes0901,Split=rep("90/10",length(step3indvec0901)),Loop=step3loop0901)
+# step3graph0901=ggplot(data=step3viz,mapping=aes(x=Iteration,y=Genes))+geom_line() + xlab("Iteration") + ylab("Number of Pathways Selected") + ggtitle("Step 3 Loop Process")
+# step3graph
+```
+
+## 80/20
+```{r}
+rep_proportions = seq(from=0,to=1,by=.05)
+step3loop0802=c()
+step3ind0802=0
+step3indvec0802=c()
+step3numgenes0802=c()
+for(i in rep_proportions){
+  prop8=i
+  set.seed(123)
+  pathway_names_sig.0802 = pathway_names.0802 %>% filter(scores>i)
+  while(nrow(pathway_names_sig.0802)<2){
+     prop8=prop8-.005
+     pathway_names_sig.0802 = pathway_names.0802 %>% filter(scores>prop8)
+  }
+  lasso_boot_sig.0802=pathway_names_sig.0802[,1]
+  step2.5.mod.dat.0802 <- path.train.scaled0802 %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.0802)) 
+  
+  cv_alg2.5.0802 <- cv.glmnet(as.matrix(step2.5.mod.dat.0802), y.train.scaled0802, alpha = 1)
+  best_lambda_alg2.5.0802 <- cv_alg2.5.0802$lambda.min
+  best_mod_alg2.5.0802 <- glmnet(as.matrix(step2.5.mod.dat.0802), y.train.scaled0802, alpha = 1, lambda = best_lambda_alg2.5.0802, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0802 <- rownames(coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802))[coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802)[,1]!= 0] 
+  lasso_alg.sig2.5.0802 <- unique(nonzero_coef_alg2.5.0802)
+  while(length(lasso_alg.sig2.5.0802)-1>=sqrt(length(y.test.scaled0802))){
+    best_lambda_alg2.5.0802=best_lambda_alg2.5.0802*1.025
+  best_mod_alg2.5.0802 <- glmnet(as.matrix(step2.5.mod.dat.0802), y.train.scaled0802, alpha = 1, lambda = best_lambda_alg2.5.0802, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0802 <- rownames(coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802))[coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802)[,1]!= 0] 
+  lasso_alg.sig2.5.0802 <- unique(nonzero_coef_alg2.5.0802)
+  step3ind0802=step3ind0802+1
+  step3indvec0802=c(step3indvec0802,step3ind0802)
+  step3numgenes0802=c(step3numgenes0802,length(lasso_alg.sig2.5.0802))
+  if(length(lasso_alg.sig2.5.0802)-1>=sqrt(length(y.test.scaled0802))){
+  step3loop0802=c(step3loop0802,NA)
+  }else{
+  step3loop0802=c(step3loop0802,length(lasso_alg.sig2.5.0802))
+  }
+  }
+  
+  # while(length(lasso_alg.sig2.5.0802)==1){
+  #   best_lambda_alg2.5.0802 <- best_lambda_alg2.5.0802*.95
+  #   best_mod_alg2.5.0802 <- glmnet(as.matrix(step2.5.mod.dat.0802), y.train.scaled0802, 
+  #                                alpha = 1, lambda = best_lambda_alg2.5.0802, path=TRUE)
+  #   nonzero_coef_alg2.5.0802 <- rownames(coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802))[coef(best_mod_alg2.5.0802, s=best_lambda_alg2.5.0802)[,1]!= 0] 
+  #   lasso_alg.sig2.5.0802 <- unique(nonzero_coef_alg2.5.0802)
+  # }
+  
+  if((length(lasso_alg.sig2.5.0802)>3)&&(length(lasso_alg.sig2.5.0802)-1)<sqrt(length(y.test.scaled0802))){
+    break
+  }
+}
+lasso_alg.sig2.5.0802
+step3viz0802=cbind(Iteration=step3indvec0802,Genes=step3numgenes0802,Split=rep("80/20",length(step3indvec0802)),Loop=step3loop0802)
+length(step3loop0802)
+length(step3indvec0802)
+View(data.frame(step3viz0802))
+
+```
+
+## 70/30
+```{r}
+rep_proportions = seq(from=0,to=1,by=.05)
+step3loop0703=c()
+step3ind0703=0
+step3indvec0703=c()
+step3numgenes0703=c()
+for(i in rep_proportions){
+  set.seed(123)
+  prop7=i
+  pathway_names_sig.0703 = pathway_names.0703 %>% filter(scores>prop7)
+  while(nrow(pathway_names_sig.0703)<2){
+     bound=bound-.005
+     pathway_names_sig.0703 = pathway_names.0703 %>% filter(scores>prop7)
+   }
+  lasso_boot_sig.0703=pathway_names_sig.0703[,1]
+  step2.5.mod.dat.0703 <- path.train.scaled0703 %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.0703)) 
+  cv_alg2.5.0703 <- cv.glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, alpha = 1)
+  best_lambda_alg2.5.0703 <- cv_alg2.5.0703$lambda.min
+  best_mod_alg2.5.0703 <- glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, 
+                                 alpha = 1, lambda = best_lambda_alg2.5.0703, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0703 <- rownames(coef(best_mod_alg2.5.0703,
+            s=best_lambda_alg2.5.0703))[coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703)[,1]!= 0] 
+  lasso_alg.sig2.5.0703 <- unique(nonzero_coef_alg2.5.0703)
+  while(length(lasso_alg.sig2.5.0703)-1>=sqrt(length(y.test.scaled0703))){
+    best_lambda_alg2.5.0703=best_lambda_alg2.5.0703*1.025
+  best_mod_alg2.5.0703 <- glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, alpha = 1, lambda = best_lambda_alg2.5.0703, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0703 <- rownames(coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703))[coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703)[,1]!= 0] 
+  lasso_alg.sig2.5.0703 <- unique(nonzero_coef_alg2.5.0703)
+  step3ind0703=step3ind0703+1
+  step3indvec0703=c(step3indvec0703,step3ind0703)
+  step3numgenes0703=c(step3numgenes0703,length(lasso_alg.sig2.5.0703))
+  if(length(lasso_alg.sig2.5.0703)-1>=sqrt(length(y.test.scaled0703))){
+  step3loop0703=c(step3loop0703,NA)
+  }else{
+  step3loop0703=c(step3loop0703,length(lasso_alg.sig2.5.0703))
+  }
+  }
+
+  # while(length(lasso_alg.sig2.5.0703)==1){
+  #   best_lambda_alg2.5.0703 <- best_lambda_alg2.5.0703*.95
+  #   best_mod_alg2.5.0703 <- glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, 
+  #                                alpha = 1, lambda = best_lambda_alg2.5.0703, path=TRUE)
+  #   nonzero_coef_alg2.5.0703 <- rownames(coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703))[coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703)[,1]!= 0] 
+  #   lasso_alg.sig2.5.0703 <- unique(nonzero_coef_alg2.5.0703)
+  # }
+  
+  if((length(lasso_alg.sig2.5.0703)>4)&&(length(lasso_alg.sig2.5.0703)-1)<sqrt(length(y.test.scaled0703))){
+    break
+  }
+}
+lasso_alg.sig2.5.0703
+step3viz0703=cbind(Iteration=step3indvec0703,Genes=step3numgenes0703,Split=rep("70/30",length(step3indvec0703)),Loop=step3loop0703)
+```
+
+## 60/40
+```{r}
+rep_proportions = seq(from=0,to=1,by=.05)
+step3loop0604=c()
+step3ind0604=0
+step3indvec0604=c()
+step3numgenes0604=c()
+for(i in rep_proportions){
+  set.seed(123)
+  prop6=i
+  pathway_names_sig.0604 = pathway_names.0604 %>% filter(scores>prop6)
+  while(nrow(pathway_names_sig.0604)<2){
+     bound=bound-.005
+     pathway_names_sig.0604 = pathway_names.0604 %>% filter(scores>prop6)
+   }
+  lasso_boot_sig.0604=pathway_names_sig.0604[,1]
+  step2.5.mod.dat.0604 <- path.train.scaled0604 %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.0604)) 
+  cv_alg2.5.0604 <- cv.glmnet(as.matrix(step2.5.mod.dat.0604), y.train.scaled0604, alpha = 1)
+  best_lambda_alg2.5.0604 <- cv_alg2.5.0604$lambda.min
+  best_mod_alg2.5.0604 <- glmnet(as.matrix(step2.5.mod.dat.0604), y.train.scaled0604, 
+                                 alpha = 1, lambda = best_lambda_alg2.5.0604, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0604 <- rownames(coef(best_mod_alg2.5.0604,
+            s=best_lambda_alg2.5.0604))[coef(best_mod_alg2.5.0604, s=best_lambda_alg2.5.0604)[,1]!= 0] 
+  lasso_alg.sig2.5.0604 <- unique(nonzero_coef_alg2.5.0604)
+  while(length(lasso_alg.sig2.5.0604)-1>=sqrt(length(y.test.scaled0604))){
+    best_lambda_alg2.5.0604=best_lambda_alg2.5.0604*1.025
+  best_mod_alg2.5.0604 <- glmnet(as.matrix(step2.5.mod.dat.0604), y.train.scaled0604, alpha = 1, lambda = best_lambda_alg2.5.0604, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0604 <- rownames(coef(best_mod_alg2.5.0604, s=best_lambda_alg2.5.0604))[coef(best_mod_alg2.5.0604, s=best_lambda_alg2.5.0604)[,1]!= 0] 
+  lasso_alg.sig2.5.0604 <- unique(nonzero_coef_alg2.5.0604)
+  step3ind0604=step3ind0604+1
+  step3indvec0604=c(step3indvec0604,step3ind0604)
+  step3numgenes0604=c(step3numgenes0604,length(lasso_alg.sig2.5.0604))
+  if(length(lasso_alg.sig2.5.0604)-1>=sqrt(length(y.test.scaled0604))){
+  step3loop0604=c(step3loop0604,NA)
+  }else{
+  step3loop0604=c(step3loop0604,length(lasso_alg.sig2.5.0604))
+  }
+  }
+  # while(length(lasso_alg.sig2.5.0703)==1){
+  #   best_lambda_alg2.5.0703 <- best_lambda_alg2.5.0703*.95
+  #   best_mod_alg2.5.0703 <- glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, 
+  #                                alpha = 1, lambda = best_lambda_alg2.5.0703, path=TRUE)
+  #   nonzero_coef_alg2.5.0703 <- rownames(coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703))[coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703)[,1]!= 0] 
+  #   lasso_alg.sig2.5.0703 <- unique(nonzero_coef_alg2.5.0703)
+  # }
+  
+  if((length(lasso_alg.sig2.5.0604)>4)&&(length(lasso_alg.sig2.5.0604)-1)<sqrt(length(y.test.scaled0604))){
+    break
+  }
+}
+lasso_alg.sig2.5.0604
+step3viz0604=cbind(Iteration=step3indvec0604,Genes=step3numgenes0604,Split=rep("60/40",length(step3indvec0604)),Loop=step3loop0604)
+```
+
+## 50/50
+```{r}
+rep_proportions = seq(from=0,to=1,by=.05)
+step3loop0505=c()
+step3ind0505=0
+step3indvec0505=c()
+step3numgenes0505=c()
+for(i in rep_proportions){
+  set.seed(123)
+  prop5=i
+  pathway_names_sig.0505 = pathway_names.0505 %>% filter(scores>prop5)
+  while(nrow(pathway_names_sig.0505)<2){
+     bound=bound-.005
+     pathway_names_sig.0505 = pathway_names.0505 %>% filter(scores>prop5)
+   }
+  lasso_boot_sig.0505=pathway_names_sig.0505[,1]
+  step2.5.mod.dat.0505 <- path.train.scaled0505 %>% 
+    data.frame() %>% 
+    dplyr::select(any_of(lasso_boot_sig.0505)) 
+  cv_alg2.5.0505 <- cv.glmnet(as.matrix(step2.5.mod.dat.0505), y.train.scaled0505, alpha = 1)
+  best_lambda_alg2.5.0505 <- cv_alg2.5.0505$lambda.min
+  best_mod_alg2.5.0505 <- glmnet(as.matrix(step2.5.mod.dat.0505), y.train.scaled0505, 
+                                 alpha = 1, lambda = best_lambda_alg2.5.0505, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0505 <- rownames(coef(best_mod_alg2.5.0505,
+            s=best_lambda_alg2.5.0505))[coef(best_mod_alg2.5.0505, s=best_lambda_alg2.5.0505)[,1]!= 0] 
+  lasso_alg.sig2.5.0505 <- unique(nonzero_coef_alg2.5.0505)
+  while(length(lasso_alg.sig2.5.0505)-1>=sqrt(length(y.test.scaled0505))){
+    best_lambda_alg2.5.0505=best_lambda_alg2.5.0505*1.025
+  best_mod_alg2.5.0505 <- glmnet(as.matrix(step2.5.mod.dat.0505), y.train.scaled0505, alpha = 1, lambda = best_lambda_alg2.5.0505, path=TRUE)
+  # extract nonzero coefs
+  nonzero_coef_alg2.5.0505 <- rownames(coef(best_mod_alg2.5.0505, s=best_lambda_alg2.5.0505))[coef(best_mod_alg2.5.0505, s=best_lambda_alg2.5.0505)[,1]!= 0] 
+  lasso_alg.sig2.5.0505 <- unique(nonzero_coef_alg2.5.0505)
+  step3ind0505=step3ind0505+1
+  step3indvec0505=c(step3indvec0505,step3ind0505)
+  step3numgenes0505=c(step3numgenes0505,length(lasso_alg.sig2.5.0505))
+  if(length(lasso_alg.sig2.5.0505)-1>=sqrt(length(y.test.scaled0505))){
+  step3loop0505=c(step3loop0505,NA)
+  }else{
+  step3loop0505=c(step3loop0505,length(lasso_alg.sig2.5.0505))
+  }
+  }
+  # while(length(lasso_alg.sig2.5.0703)==1){
+  #   best_lambda_alg2.5.0703 <- best_lambda_alg2.5.0703*.95
+  #   best_mod_alg2.5.0703 <- glmnet(as.matrix(step2.5.mod.dat.0703), y.train.scaled0703, 
+  #                                alpha = 1, lambda = best_lambda_alg2.5.0703, path=TRUE)
+  #   nonzero_coef_alg2.5.0703 <- rownames(coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703))[coef(best_mod_alg2.5.0703, s=best_lambda_alg2.5.0703)[,1]!= 0] 
+  #   lasso_alg.sig2.5.0703 <- unique(nonzero_coef_alg2.5.0703)
+  # }
+  
+  if((length(lasso_alg.sig2.5.0505)>5)&&(length(lasso_alg.sig2.5.0505)-1)<sqrt(length(y.test.scaled0505))){
+    break
+  }
+}
+lasso_alg.sig2.5.0505
+step3viz0505=cbind(Iteration=step3indvec0505,Genes=step3numgenes0505,Split=rep("50/50",length(step3indvec0505)),Loop=step3loop0505)
+step3viztotal=rbind(step3viz0901,step3viz0802,step3viz0703,step3viz0604,step3viz0505)
+step3viztotal=data.frame(step3viztotal)
+step3viztotal$Iteration=as.numeric(step3viztotal$Iteration)
+step3viztotal$Genes=as.numeric(step3viztotal$Genes)
+step3viztotal$Loop=as.numeric(step3viztotal$Loop)
+step3vizgraph=ggplot(data=step3viztotal,mapping=aes(x=Iteration,y=Genes,group=Split))+geom_line(aes(col=Split),linewidth=1.5)+xlab("Iteration")+ylab("Number of Pathways Selected")+ggtitle("Step 1d Loop Process by Split")+theme(text = element_text(size = 16, family = "serif"))+scale_color_brewer(palette = "Set2")
+step3vizgraph
+View(step3viztotal)
+windowsFonts()
+```
+
+
+# Step 3
+
+## Ridge regression Y on subset selected genes 
+
+### Full data 
+```{r}
+step3.mod.dat.test.full <- pathway.scores %>% 
+  data.frame() %>% 
+  dplyr::select(any_of(lasso_alg.sig2.5.full)) %>% 
+  cbind(y.transformed)
+
+
+mod_full <- lm(y.transformed ~., data=step3.mod.dat.test.full)
+summary(mod_full)
+sqrt(deviance(mod_full)/df.residual(mod_full))
+```
+
+### 90/10 
+```{r}
+step3.mod.dat.test.0901 <- path.test0901%>% 
+  data.frame() %>% 
+  dplyr::select(any_of(lasso_alg.sig2.5.0901)) %>% 
+  cbind(y.test0901) 
+
+pairs0901 <- ggpairs(step3.mod.dat.test.0901, progress=FALSE)
+pairs0901
+
+
+mod_0901 <- lm(y.test0901 ~., data=step3.mod.dat.test.0901)
+summary(mod_0901) 
+
+
+mod_0901_diag <- cbind(data.frame(fitted = mod_0901$fitted, resid = mod_0901$residuals), step3.mod.dat.test.0901)
+plot_grid(
+  ggplot(mod_0901_diag, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept=0) +
+    labs(title="Residuals vs. Fitted", y="fitted values"), 
+  
+  ggplot(mod_0901_diag, aes(sample=resid)) + 
+    stat_qq() +
+    stat_qq_line() + 
+    labs(title="Normal Quantile Plot", x = "Theoretical Quantiles", y="Sample Quantiles"), 
+  nrow=2
+) 
+```
+
+### 80/20 
+```{r}
+step3.mod.dat.test.0802 <- path.test0802 %>%
+  data.frame() %>%
+  dplyr::select(any_of(lasso_alg.sig2.5.0802)) %>% 
+  cbind(y.test0802)
+
+pairs0802 <- ggpairs(step3.mod.dat.test.0802, progress=FALSE)
+pairs0802
+
+
+mod_0802 <- lm(y.test0802 ~., data=step3.mod.dat.test.0802)
+summary(mod_0802) 
+
+mod_0802_diag <- cbind(data.frame(fitted = mod_0802$fitted, resid = mod_0802$residuals), step3.mod.dat.test.0802)
+plot_grid(
+  ggplot(mod_0802_diag, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept=0) +
+    labs(title="Residuals vs. Fitted", y="fitted values"), 
+  
+  ggplot(mod_0802_diag, aes(sample=resid)) + 
+    stat_qq() +
+    stat_qq_line() + 
+    labs(title="Normal Quantile Plot", x = "Theoretical Quantiles", y="Sample Quantiles"), 
+  nrow=2
+) 
+```
+
+### 70/30 
+```{r}
+step3.mod.dat.test.0703 <- path.test0703 %>% 
+  data.frame() %>% 
+  dplyr::select(any_of(lasso_alg.sig2.5.0703)) %>% 
+  cbind(y.test0703)
+
+pairs0703 <- ggpairs(step3.mod.dat.test.0703, progress=FALSE)
+pairs0703
+
+
+mod_0703 <- lm(y.test0703 ~., data=step3.mod.dat.test.0703)
+summary(mod_0703) 
+
+vif(mod_0703)
+
+mod_0703_diag <- cbind(data.frame(fitted = mod_0703$fitted, resid = mod_0703$residuals), step3.mod.dat.test.0703)
+plot_grid(
+  ggplot(mod_0703_diag, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept=0) +
+    labs(title="Residuals vs. Fitted", y="fitted values"), 
+  
+  ggplot(mod_0703_diag, aes(sample=resid)) + 
+    stat_qq() +
+    stat_qq_line() + 
+    labs(title="Normal Quantile Plot", x = "Theoretical Quantiles", y="Sample Quantiles"), 
+  nrow=2
+) 
+```
+### 60/40 
+```{r}
+step3.mod.dat.test.0604 <- path.test0604 %>% 
+  data.frame() %>% 
+  dplyr::select(any_of(lasso_alg.sig2.5.0604)) %>% 
+  cbind(y.test0604)
+
+pairs0604 <- ggpairs(step3.mod.dat.test.0604, progress=FALSE)
+pairs0604
+
+mod_0604 <- lm(y.test0604 ~., data=step3.mod.dat.test.0604)
+summary(mod_0604) 
+
+vif(mod_0604)
+
+mod_0604_diag <- cbind(data.frame(fitted = mod_0604$fitted, resid = mod_0604$residuals), step3.mod.dat.test.0604)
+plot_grid(
+  ggplot(mod_0604_diag, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept=0) +
+    labs(title="Residuals vs. Fitted", y="fitted values"), 
+  
+  ggplot(mod_0604_diag, aes(sample=resid)) + 
+    stat_qq() +
+    stat_qq_line() + 
+    labs(title="Normal Quantile Plot", x = "Theoretical Quantiles", y="Sample Quantiles"), 
+  nrow=2
+) 
+```
+### 50/50 
+```{r}
+step3.mod.dat.test.0505 <- path.test0505 %>% 
+  data.frame() %>% 
+  dplyr::select(any_of(lasso_alg.sig2.5.0505)) %>% 
+  cbind(y.test0505)
+
+pairs0505 <- ggpairs(step3.mod.dat.test.0505, progress=FALSE)
+pairs0505
+
+mod_0505 <- lm(y.test0505 ~., data=step3.mod.dat.test.0505)
+summary(mod_0505) 
+
+
+vif(mod_0505)
+
+mod_0505_diag <- cbind(data.frame(fitted = mod_0505$fitted, resid = mod_0505$residuals), step3.mod.dat.test.0505)
+plot_grid(
+  ggplot(mod_0505_diag, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept=0) +
+    labs(title="Residuals vs. Fitted", y="fitted values"), 
+  
+  ggplot(mod_0505_diag, aes(sample=resid)) + 
+    stat_qq() +
+    stat_qq_line() + 
+    labs(title="Normal Quantile Plot", x = "Theoretical Quantiles", y="Sample Quantiles"), 
+  nrow=2
+) 
+```
+
+
+
+
+# some tables of confidence intervals 
+
+```{r}
+knitr::kable(data.frame(confint(mod_0901)[-1, ]), col.names = c("2.5", "97.5"), 
+             caption="90/10 split 95% confidence interval")
+knitr::kable(data.frame(confint(mod_0802)[-1, ]), col.names = c("2.5", "97.5"), 
+             caption="80/20 split 95% confidence interval")
+knitr::kable(data.frame(confint(mod_0703)[-1, ]), col.names = c("2.5", "97.5"), 
+             caption="70/30 split 95% confidence interval")
+knitr::kable(data.frame(confint(mod_0604)[-1, ]), col.names = c("2.5", "97.5"), 
+             caption="60/40 split 95% confidence interval")
+knitr::kable(data.frame(confint(mod_0505)[-1, ]), col.names = c("2.5", "97.5"), 
+             caption="50/50 split 95% confidence interval")
+
+```
+
+# some tables of summary statistics from models 
+```{r}
+tidy(mod_0901) %>%  kbl(caption="Table 1: 90/10 split",
+                    format= "html",
+                    align="r") %>%
+  kable_classic(full_width = F, html_font = "helvetica")
+
+tidy(mod_0802) %>%  kbl(caption="Table 2: 80/20 split",
+                    format= "html",
+                    align="r") %>%
+  kable_classic(full_width = F, html_font = "helvetica")
+
+tidy(mod_0703) %>%  kbl(caption="Table 1: 70/30 split",
+                    format= "html",
+                    align="r") %>%
+  kable_classic(full_width = F, html_font = "helvetica")
+
+tidy(mod_0604) %>%  kbl(caption="Table 2: 60/40 split",
+                    format= "html",
+                    align="r") %>%
+  kable_classic(full_width = F, html_font = "helvetica")
+
+tidy(mod_0505) %>%  kbl(caption="Table 2: 50/50 split",
+                    format= "html",
+                    align="r") %>%
+  kable_classic(full_width = F, html_font = "helvetica")
+```
+
+
+
